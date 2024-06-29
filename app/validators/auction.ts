@@ -22,3 +22,9 @@ export const addAuctionValidator = vine.compile(
       .minLength(1),
   })
 )
+
+export const bidAuctionValidator = vine.compile(
+  vine.object({
+    nominal: vine.number().positive(),
+  })
+)

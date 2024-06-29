@@ -33,4 +33,7 @@ vine.messagesProvider = new SimpleMessagesProvider({
   'auctionImages.array': 'Auction images must be an array!',
   'auctionImages.array.minLength': 'Auction images must at least 1 image!',
   'auctionImages.*.file': 'Auction images format incorrect!',
+  'nominal.required': 'Bid nominal must be filled!',
+  'nominal.number': 'Bid nominal must be a number!',
+  'nominal.positive': 'Bid nominal must be positive number!',
 })
