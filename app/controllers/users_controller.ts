@@ -26,7 +26,7 @@ export default class UsersController {
 
       return response.ok({
         message: 'Data fetched!',
-        data: userData[0],
+        data: userData[0][0],
       })
     } catch (error) {
       throw error
