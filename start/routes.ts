@@ -73,9 +73,9 @@ router
     // Auction Services
     router
       .group(() => {
-        router.get('/:id', '#controllers/auctions_controller.getAuctionDetail')
         router.get('/community/:id?', '#controllers/auctions_controller.getAuctionsByCommunity')
         router.get('/category/:id?', '#controllers/auctions_controller.getAuctionsByCategory')
+        router.get('/:id', '#controllers/auctions_controller.getAuctionDetail')
         router.post('/', '#controllers/auctions_controller.addAuction')
         router.post('/bid/:id', '#controllers/auctions_controller.bidAuction')
       })
@@ -91,7 +91,7 @@ router
       .group(() => {
         router.get('/users/*', '#controllers/uploads_controller.getUserUpload')
         router.get('/communities/*', '#controllers/uploads_controller.getCommunityUpload')
-        router.get('/auctions/*', '#controllers/auctions_controller.getAuctionUpload')
+        router.get('/auctions/*', '#controllers/uploads_controller.getAuctionUpload')
       })
       .prefix('/uploads')
   })
