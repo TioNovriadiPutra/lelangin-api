@@ -18,4 +18,28 @@ export default class UploadsController {
     const absolutePath = app.makePath('uploads/users', normalizedPath)
     return response.download(absolutePath)
   }
+
+  async getCommunityUpload({ request, response }: HttpContext) {
+    const filePath = request.param('*').join(sep)
+    const normalizedPath = normalize(filePath)
+
+    if (PATH_TRAVERSAL_REGEX.test(normalizedPath)) {
+      return response.badRequest('Malformed path')
+    }
+
+    const absolutePath = app.makePath('uploads/communities', normalizedPath)
+    return response.download(absolutePath)
+  }
+
+  async getAuctionUpload({ request, response }: HttpContext) {
+    const filePath = request.param('*').join(sep)
+    const normalizedPath = normalize(filePath)
+
+    if (PATH_TRAVERSAL_REGEX.test(normalizedPath)) {
+      return response.badRequest('Malformed path')
+    }
+
+    const absolutePath = app.makePath('uploads/auctions', normalizedPath)
+    return response.download(absolutePath)
+  }
 }

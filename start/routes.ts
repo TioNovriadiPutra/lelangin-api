@@ -90,6 +90,8 @@ router
     router
       .group(() => {
         router.get('/users/*', '#controllers/uploads_controller.getUserUpload')
+        router.get('/communities/*', '#controllers/uploads_controller.getCommunityUpload')
+        router.get('/auctions/*', '#controllers/auctions_controller.getAuctionUpload')
       })
       .prefix('/uploads')
   })
