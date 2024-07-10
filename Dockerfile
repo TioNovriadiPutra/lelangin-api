@@ -5,7 +5,6 @@ FROM base as deps
 WORKDIR /app
 ADD package.json package-lock.json ./
 RUN npm ci
-CMD ["sh", "-c", "node ace migration:run --force && node ace db:seed --force"]
 
 # Production only deps stage
 FROM base as production-deps
@@ -28,3 +27,4 @@ COPY --from=production-deps /app/node_modules /app/node_modules
 COPY --from=build /app/build /app
 EXPOSE 8080
 CMD ["node", "./bin/server.js"]
+CMD ["sh", "-c", "node ace migration:run --force && node ace db:seed --force"]
