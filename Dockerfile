@@ -2,10 +2,10 @@ FROM node:20.12.2-alpine3.18 as base
 
 # All deps stage
 FROM base as deps
+WORKDIR /app
 ADD package.json package-lock.json ./
-RUN npm install
-RUN ["sh", "-c", "node ace migration:run --force && node ace db:seed --force"]
 RUN npm ci
+CMD ["sh", "-c", "node ace migration:run --force && node ace db:seed --force"]
 
 # Production only deps stage
 FROM base as production-deps
