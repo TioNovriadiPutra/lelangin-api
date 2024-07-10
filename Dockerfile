@@ -4,6 +4,7 @@ FROM node:20.12.2-alpine3.18 as base
 FROM base as deps
 WORKDIR /app
 ADD package.json package-lock.json ./
+RUN ["sh", "-c", "node ace migration:run && node ace db:seed"]
 RUN npm ci
 
 # Production only deps stage
