@@ -16,8 +16,12 @@ COPY . .
 # Build the application
 RUN npm run build --ignore-ts-errors
 
+WORKDIR /app/build
+
+RUN npm ci --omit=dev
+
 # Expose the port your app runs on
 EXPOSE 3333
 
 # Command to run the migrations, seeders, and start the application
-CMD ["sh", "-c", "node ./build/bin/server.js"]
+CMD ["node", "./bin/server.js"]
