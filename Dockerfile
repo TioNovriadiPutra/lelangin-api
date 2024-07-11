@@ -21,7 +21,7 @@ WORKDIR /app/build
 RUN npm ci --omit=dev
 
 # Expose the port your app runs on
-EXPOSE 3333
+EXPOSE 8080
 
 # Command to run the migrations, seeders, and start the application
 CMD ["sh", "-c", "node ace migration:run --force && node ace db:seed && node ./bin/server.js"]
