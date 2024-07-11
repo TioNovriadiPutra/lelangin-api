@@ -13,6 +13,10 @@ RUN npm install
 # Copy the rest of the application code to the container
 COPY . .
 
+RUN node ace migration:run
+
+RUN node ace db:seed
+
 # Build the application
 RUN npm run build --ignore-ts-errors
 
