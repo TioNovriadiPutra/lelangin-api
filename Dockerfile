@@ -13,10 +13,6 @@ RUN npm install
 # Copy the rest of the application code to the container
 COPY . .
 
-RUN node ace migration:run
-
-RUN node ace db:seed
-
 # Build the application
 RUN npm run build --ignore-ts-errors
 
@@ -28,4 +24,4 @@ RUN npm ci --omit=dev
 EXPOSE 3333
 
 # Command to run the migrations, seeders, and start the application
-CMD ["node", "./bin/server.js"]
+CMD ["sh", "-c", "node ace migration:run --force && node ace db:seed && node ./bin/server.js"]
