@@ -73,8 +73,8 @@ router
     // Auction Services
     router
       .group(() => {
-        router.get('/community/:id?', '#controllers/auctions_controller.getAuctionsByCommunity')
-        router.get('/category/:id?', '#controllers/auctions_controller.getAuctionsByCategory')
+        router.get('/category', '#controllers/auctions_controller.getAuctionsByCategory')
+        router.get('/community', '#controllers/auctions_controller.getAuctionsByCommunity')
         router.get('/:id', '#controllers/auctions_controller.getAuctionDetail')
         router.post('/', '#controllers/auctions_controller.addAuction')
         router.post('/bid/:id', '#controllers/auctions_controller.bidAuction')

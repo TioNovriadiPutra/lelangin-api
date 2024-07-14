@@ -16,7 +16,9 @@ import { currencyFormatter } from '../helpers/formatter.js'
 import AuctionBet from '#models/auction_bet'
 
 export default class AuctionsController {
-  async getAuctionsByCommunity({ response, params }: HttpContext) {
+  async getAuctionsByCommunity({ request, response }: HttpContext) {
+    const queryParam = request.qs()
+
     let query = `SELECT
       a.id,
       a.auction_name,
@@ -26,29 +28,34 @@ export default class AuctionsController {
         ag.auction_image
       ) AS galleries
     FROM auctions a
+    JOIN communities c ON a.community_id = c.id
     JOIN auction_galleries ag ON a.id = ag.auction_id`
+    const paramArr = []
 
-    if (params.id) {
-      query += ` WHERE a.community_id = ${params.id}`
+    if (queryParam.community) {
+      query += ` WHERE c.community_name LIKE ?`
+      paramArr.push(`%${queryParam.community}%`)
     }
 
-    let auctionData = await db.rawQuery(query)
+    query += ` GROUP BY a.auction_name`
 
-    if (auctionData[0][0].id !== null) {
-      for (const data of auctionData[0]) {
-        Object.assign(data, {
-          galleries: data.galleries.split(','),
-        })
-      }
+    let auctionData = await db.rawQuery(query, paramArr)
+
+    for (const data of auctionData[0]) {
+      Object.assign(data, {
+        galleries: data.galleries.split(','),
+      })
     }
 
     return response.ok({
       message: 'Data fetched!',
-      data: auctionData[0][0].id === null ? [] : auctionData[0],
+      data: auctionData[0],
     })
   }
 
-  async getAuctionsByCategory({ response, params }: HttpContext) {
+  async getAuctionsByCategory({ request, response }: HttpContext) {
+    const queryParam = request.qs()
+
     let query = `SELECT
       a.id,
       a.auction_name,
@@ -58,25 +65,28 @@ export default class AuctionsController {
         ag.auction_image
       ) AS galleries
     FROM auctions a
+    JOIN categories c ON a.category_id = c.id
     JOIN auction_galleries ag ON a.id = ag.auction_id`
+    const paramArr = []
 
-    if (params.id) {
-      query += ` WHERE a.category_id = ${params.id}`
+    if (queryParam.category) {
+      query += ` WHERE c.category_name LIKE ?`
+      paramArr.push(`%${queryParam.category}%`)
     }
 
-    let auctionData = await db.rawQuery(query)
+    query += ` GROUP BY a.auction_name`
 
-    if (auctionData[0][0].id !== null) {
-      for (const data of auctionData[0]) {
-        Object.assign(data, {
-          galleries: data.galleries.split(','),
-        })
-      }
+    let auctionData = await db.rawQuery(query, paramArr)
+
+    for (const data of auctionData[0]) {
+      Object.assign(data, {
+        galleries: data.galleries.split(','),
+      })
     }
 
     return response.ok({
       message: 'Data fetched!',
-      data: auctionData[0][0].id === null ? [] : auctionData[0],
+      data: auctionData[0],
     })
   }
 
@@ -191,12 +201,16 @@ export default class AuctionsController {
           `Nominal must be higher than ${currencyFormatter(auctionData.highestBid)}`
         )
       }
+
       const newAuctionBid = new AuctionBet()
       newAuctionBid.nominal = data.nominal
       newAuctionBid.profileId = profileData.id
       newAuctionBid.auctionId = auctionData.id
 
+      auctionData.highestBid = data.nominal
+
       await newAuctionBid.save()
+      await auctionData.save()
 
       return response.created({
         message: 'Bid Added!',
