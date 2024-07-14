@@ -77,6 +77,7 @@ router
         router.get('/community', '#controllers/auctions_controller.getAuctionsByCommunity')
         router.get('/:id', '#controllers/auctions_controller.getAuctionDetail')
         router.post('/', '#controllers/auctions_controller.addAuction')
+        router.get('/bid/:id', '#controllers/auctions_controller.approveBid')
         router.post('/bid/:id', '#controllers/auctions_controller.bidAuction')
       })
       .prefix('/auction')

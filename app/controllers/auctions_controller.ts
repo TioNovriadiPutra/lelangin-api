@@ -101,6 +101,7 @@ export default class AuctionsController {
           a.timer,
           a.highest_bid,
           a.description,
+          a.profile_id,
           GROUP_CONCAT(
             ag.auction_image
           ) AS galleries
@@ -222,6 +223,35 @@ export default class AuctionsController {
         throw new DataNotFoundException('Auction')
       } else {
         throw error
+      }
+    }
+  }
+
+  async approveBid({ response, params }: HttpContext) {
+    try {
+      const auctionData = await Auction.findOrFail(params.id)
+
+      const auctionBidData = await AuctionBet.query()
+        .whereHas('auction', (auctionQuery) => {
+          auctionQuery.where('id', auctionData.id)
+        })
+        .orderBy('created_at', 'desc')
+        .firstOrFail()
+
+      auctionData.timer = DateTime.now().minus({ days: 1 })
+      auctionBidData.approve = true
+
+      await auctionData.save()
+      await auctionBidData.save()
+
+      return response.ok({
+        message: 'Bid approved!',
+      })
+    } catch (error) {
+      if (error.status === 404) {
+        throw new DataNotFoundException('Bid')
+      } else {
+        console.log(error)
       }
     }
   }

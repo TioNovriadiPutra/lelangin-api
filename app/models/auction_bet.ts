@@ -11,6 +11,13 @@ export default class AuctionBet extends BaseModel {
   @column()
   declare nominal: number
 
+  @column({
+    serialize: (value: number): Boolean => {
+      return Boolean(value)
+    },
+  })
+  declare approve: boolean
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

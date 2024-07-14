@@ -14,11 +14,14 @@ export default class AuthController {
 
       const userData = await User.verifyCredentials(data.email, data.password)
 
+      const profileData = await Profile.findByOrFail('user_id', userData.id)
+
       const token = await User.accessTokens.create(userData)
 
       return response.ok({
         message: 'Login success!',
         token,
+        userId: profileData.id,
       })
     } catch (error) {
       if (error.status === 422) {
