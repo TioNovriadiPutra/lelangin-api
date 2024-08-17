@@ -74,6 +74,7 @@ router
     router
       .group(() => {
         router.get('/', '#controllers/auctions_controller.getUserAuctions')
+        router.get('/bid', '#controllers/auctions_controller.getUserBids')
         router.get('/category', '#controllers/auctions_controller.getAuctionsByCategory')
         router.get('/community', '#controllers/auctions_controller.getAuctionsByCommunity')
         router.get('/:id', '#controllers/auctions_controller.getAuctionDetail')

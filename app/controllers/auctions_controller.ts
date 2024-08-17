@@ -16,6 +16,70 @@ import { currencyFormatter } from '../helpers/formatter.js'
 import AuctionBet from '#models/auction_bet'
 
 export default class AuctionsController {
+  async getUserAuctions({ response, auth }: HttpContext) {
+    try {
+      const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
+
+      const auctionData = await db.rawQuery(
+        `SELECT
+          a.id,
+          a.auction_name,
+          a.timer,
+          a.highest_bid,
+          GROUP_CONCAT(
+            ag.auction_image
+          ) AS galleries
+         FROM auctions a
+         JOIN auction_galleries ag ON a.id = ag.auction_id
+         WHERE a.profile_id = ?`,
+        [profileData.id]
+      )
+
+      return response.ok({
+        message: 'Data fetched!',
+        data: auctionData[0],
+      })
+    } catch (error) {
+      if (error.status === 404) {
+        throw new DataNotFoundException('Account')
+      }
+    }
+  }
+
+  async getUserBids({ response, auth }: HttpContext) {
+    try {
+      const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
+
+      const bidData = await db.rawQuery(
+        `SELECT
+          a.id,
+          a.auction_name,
+          a.timer,
+          a.highest_bid,
+          GROUP_CONCAT(
+            ag.auction_image
+          ) AS galleries
+         FROM auction_bets ab
+         JOIN auctions a ON ab.auction_id = a.id
+         JOIN auction_galleries ag ON a.id = ag.auction_id
+         WHERE ab.profile_id = ?
+         GROUP BY ab.id`,
+        [profileData.id]
+      )
+
+      return response.ok({
+        message: 'Data fetched!',
+        data: bidData[0],
+      })
+    } catch (error) {
+      if (error.status === 404) {
+        throw new DataNotFoundException('Account')
+      } else {
+        console.log(error)
+      }
+    }
+  }
+
   async getAuctionsByCommunity({ request, response }: HttpContext) {
     const queryParam = request.qs()
 
