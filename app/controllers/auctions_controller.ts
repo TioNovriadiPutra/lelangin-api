@@ -16,36 +16,6 @@ import { currencyFormatter } from '../helpers/formatter.js'
 import AuctionBet from '#models/auction_bet'
 
 export default class AuctionsController {
-  async getUserAuctions({ response, auth }: HttpContext) {
-    try {
-      const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
-
-      const auctionData = await db.rawQuery(
-        `SELECT
-          a.id,
-          a.auction_name,
-          a.timer,
-          a.highest_bid,
-          GROUP_CONCAT(
-            ag.auction_image
-          ) AS galleries
-         FROM auctions a
-         JOIN auction_galleries ag ON a.id = ag.auction_id
-         WHERE a.profile_id = ?`,
-        [profileData.id]
-      )
-
-      return response.ok({
-        message: 'Data fetched!',
-        data: auctionData[0],
-      })
-    } catch (error) {
-      if (error.status === 404) {
-        throw new DataNotFoundException('Account')
-      }
-    }
-  }
-
   async getUserBids({ response, auth }: HttpContext) {
     try {
       const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
@@ -101,7 +71,7 @@ export default class AuctionsController {
       paramArr.push(`%${queryParam.community}%`)
     }
 
-    query += ` GROUP BY a.auction_name`
+    query += ` GROUP BY a.id, a.auction_name`
 
     let auctionData = await db.rawQuery(query, paramArr)
 
@@ -138,7 +108,7 @@ export default class AuctionsController {
       paramArr.push(`%${queryParam.category}%`)
     }
 
-    query += ` GROUP BY a.auction_name`
+    query += ` GROUP BY a.id, a.auction_name`
 
     let auctionData = await db.rawQuery(query, paramArr)
 
