@@ -20,8 +20,10 @@ export default class AuthController {
 
       return response.ok({
         message: 'Login success!',
-        token,
-        userId: profileData.id,
+        data: {
+          token,
+          userId: profileData.id,
+        },
       })
     } catch (error) {
       if (error.status === 422) {

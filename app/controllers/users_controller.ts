@@ -12,6 +12,7 @@ export default class UsersController {
     try {
       const userData = await db.rawQuery(
         `SELECT
+          id,
           full_name,
           profile_pic,
           address

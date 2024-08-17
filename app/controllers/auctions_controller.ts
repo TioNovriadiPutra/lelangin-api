@@ -90,6 +90,38 @@ export default class AuctionsController {
     })
   }
 
+  async getUserAuctions({ response, auth }: HttpContext) {
+    const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
+
+    const auctionData = await db.rawQuery(
+      `SELECT
+          a.id,
+          a.auction_name,
+          a.timer,
+          a.highest_bid,
+          GROUP_CONCAT(
+            ag.auction_image
+          ) AS galleries
+         FROM auctions a
+         JOIN categories c ON a.category_id = c.id
+         JOIN auction_galleries ag ON a.id = ag.auction_id
+         WHERE a.profile_id = ?
+         GROUP BY a.id`,
+      [profileData.id]
+    )
+
+    for (const data of auctionData[0]) {
+      Object.assign(data, {
+        galleries: data.galleries.split(','),
+      })
+    }
+
+    return response.ok({
+      message: 'Data fetched!',
+      data: auctionData[0],
+    })
+  }
+
   async getAuctionDetail({ response, params }: HttpContext) {
     try {
       const auctionData = await db.rawQuery(
