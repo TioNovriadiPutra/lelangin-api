@@ -67,8 +67,8 @@ export default class AuctionsController {
     const paramArr = []
 
     if (queryParam.community) {
-      query += ` WHERE c.community_name LIKE ?`
-      paramArr.push(`%${queryParam.community}%`)
+      query += ` WHERE a.community_id = ?`
+      paramArr.push(queryParam.community)
     }
 
     query += ` GROUP BY a.id, a.auction_name`

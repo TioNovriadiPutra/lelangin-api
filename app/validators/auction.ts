@@ -10,7 +10,7 @@ export const addAuctionValidator = vine.compile(
     buyNow: vine.boolean(),
     buyNowPrice: vine.number().positive().optional(),
     timer: vine.date({
-      formats: ['DD-MM-YYYY, H:m'],
+      formats: ['DD-MM-YYYY, HH:mm'],
     }),
     auctionImages: vine
       .array(
