@@ -50,8 +50,10 @@ export default class AuctionsController {
     }
   }
 
-  async getAuctionsByCommunity({ request, response }: HttpContext) {
+  async getAuctionsByCommunity({ request, response, auth }: HttpContext) {
     const queryParam = request.qs()
+
+    const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
 
     let query = `SELECT
       a.id,
@@ -63,11 +65,12 @@ export default class AuctionsController {
       ) AS galleries
     FROM auctions a
     JOIN communities c ON a.community_id = c.id
-    JOIN auction_galleries ag ON a.id = ag.auction_id`
-    const paramArr = []
+    JOIN auction_galleries ag ON a.id = ag.auction_id
+    WHERE a.profile_id != ?`
+    const paramArr = [profileData.id.toString()]
 
     if (queryParam.community) {
-      query += ` WHERE a.community_id = ?`
+      query += ` AND a.community_id = ?`
       paramArr.push(queryParam.community)
     }
 
@@ -87,8 +90,10 @@ export default class AuctionsController {
     })
   }
 
-  async getAuctionsByCategory({ request, response }: HttpContext) {
+  async getAuctionsByCategory({ request, response, auth }: HttpContext) {
     const queryParam = request.qs()
+
+    const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
 
     let query = `SELECT
       a.id,
@@ -100,11 +105,12 @@ export default class AuctionsController {
       ) AS galleries
     FROM auctions a
     JOIN categories c ON a.category_id = c.id
-    JOIN auction_galleries ag ON a.id = ag.auction_id`
-    const paramArr = []
+    JOIN auction_galleries ag ON a.id = ag.auction_id
+    WHERE a.profile_id != ?`
+    const paramArr = [profileData.id.toString()]
 
     if (queryParam.category) {
-      query += ` WHERE c.category_name LIKE ?`
+      query += ` AND c.category_name LIKE ?`
       paramArr.push(`%${queryParam.category}%`)
     }
 
