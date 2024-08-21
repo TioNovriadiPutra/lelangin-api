@@ -3,33 +3,31 @@ import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import Profile from './profile.js'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import Auction from './auction.js'
-import { AuctionStatus } from '../enums/status.js'
 
-export default class AuctionBet extends BaseModel {
+export default class Transaction extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
 
   @column()
-  declare nominal: number
-
-  @column({
-    serialize: (value: number): Boolean => {
-      return Boolean(value)
-    },
-  })
-  declare approve: boolean
+  declare auctionName: string
 
   @column()
-  declare status: AuctionStatus
+  declare nominal: number
+
+  @column()
+  declare thumbnail: string
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 
   @column()
   declare profileId: number
 
   @column()
-  declare auctionId: number
+  declare auctionId?: number
 
   @belongsTo(() => Profile)
   declare profile: BelongsTo<typeof Profile>

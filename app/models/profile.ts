@@ -6,6 +6,7 @@ import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Community from './community.js'
 import Auction from './auction.js'
 import AuctionBet from './auction_bet.js'
+import Transaction from './transaction.js'
 
 export default class Profile extends BaseModel {
   @column({ isPrimary: true })
@@ -46,4 +47,7 @@ export default class Profile extends BaseModel {
 
   @hasMany(() => AuctionBet)
   declare bets: HasMany<typeof AuctionBet>
+
+  @hasMany(() => Transaction)
+  declare transactions: HasMany<typeof Transaction>
 }

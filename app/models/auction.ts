@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
 import Category from './category.js'
-import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import Community from './community.js'
 import Profile from './profile.js'
 import AuctionBet from './auction_bet.js'
 import AuctionGallery from './auction_gallery.js'
+import Transaction from './transaction.js'
 
 export default class Auction extends BaseModel {
   @column({ isPrimary: true })
@@ -31,6 +32,9 @@ export default class Auction extends BaseModel {
 
   @column()
   declare highestBid: number
+
+  @column()
+  declare approve: boolean
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -61,4 +65,7 @@ export default class Auction extends BaseModel {
 
   @hasMany(() => AuctionGallery)
   declare auctionGalleries: HasMany<typeof AuctionGallery>
+
+  @hasOne(() => Transaction)
+  declare transaction: HasOne<typeof Transaction>
 }

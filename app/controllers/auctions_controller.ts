@@ -14,18 +14,21 @@ import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 import { currencyFormatter } from '../helpers/formatter.js'
 import AuctionBet from '#models/auction_bet'
+import { AuctionStatus } from '../enums/status.js'
+import Transaction from '#models/transaction'
 
 export default class AuctionsController {
   async getUserBids({ response, auth }: HttpContext) {
     try {
       const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
 
-      const bidData = await db.rawQuery(
+      let bidData = await db.rawQuery(
         `SELECT
           a.id,
           a.auction_name,
           a.timer,
           a.highest_bid,
+          a.approve,
           GROUP_CONCAT(
             ag.auction_image
           ) AS galleries
@@ -33,9 +36,15 @@ export default class AuctionsController {
          JOIN auctions a ON ab.auction_id = a.id
          JOIN auction_galleries ag ON a.id = ag.auction_id
          WHERE ab.profile_id = ?
-         GROUP BY ab.id`,
+         GROUP BY ab.id, a.id, a.auction_name`,
         [profileData.id]
       )
+
+      for (const data of bidData[0]) {
+        Object.assign(data, {
+          galleries: data.galleries.split(','),
+        })
+      }
 
       return response.ok({
         message: 'Data fetched!',
@@ -60,6 +69,7 @@ export default class AuctionsController {
       a.auction_name,
       a.timer,
       a.highest_bid,
+      a.approve,
       GROUP_CONCAT(
         ag.auction_image
       ) AS galleries
@@ -100,6 +110,7 @@ export default class AuctionsController {
       a.auction_name,
       a.timer,
       a.highest_bid,
+      a.approve,
       GROUP_CONCAT(
         ag.auction_image
       ) AS galleries
@@ -139,6 +150,7 @@ export default class AuctionsController {
           a.auction_name,
           a.timer,
           a.highest_bid,
+          a.approve,
           GROUP_CONCAT(
             ag.auction_image
           ) AS galleries
@@ -162,6 +174,45 @@ export default class AuctionsController {
     })
   }
 
+  async getApproveAuctions({ response, auth }: HttpContext) {
+    const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
+
+    let bidData = await db.rawQuery(
+      `SELECT
+          a.id,
+          a.auction_name,
+          a.timer,
+          a.highest_bid,
+          a.approve,
+          CASE
+            WHEN ab.status = "progress" THEN "On Progress"
+            WHEN ab.status = "payment" THEN "Waiting for Payment"
+            WHEN ab.status = "shipping" THEN "Shipping"
+            WHEN ab.status = "done" THEN "Finish"
+          END AS status,
+          GROUP_CONCAT(
+            ag.auction_image
+          ) AS galleries
+         FROM auction_bets ab
+         JOIN auctions a ON ab.auction_id = a.id
+         JOIN auction_galleries ag ON a.id = ag.auction_id
+         WHERE ab.profile_id = ? AND ab.approve = 1
+         GROUP BY ab.id, a.id, a.auction_name`,
+      [profileData.id]
+    )
+
+    for (const data of bidData[0]) {
+      Object.assign(data, {
+        galleries: data.galleries.split(','),
+      })
+    }
+
+    return response.ok({
+      message: 'Data fetched!',
+      data: bidData[0],
+    })
+  }
+
   async getAuctionDetail({ response, params }: HttpContext) {
     try {
       const auctionData = await db.rawQuery(
@@ -173,6 +224,7 @@ export default class AuctionsController {
           a.timer,
           a.highest_bid,
           a.description,
+          a.approve,
           a.profile_id,
           GROUP_CONCAT(
             ag.auction_image
@@ -311,7 +363,9 @@ export default class AuctionsController {
         .firstOrFail()
 
       auctionData.timer = DateTime.now().minus({ days: 1 })
+      auctionData.approve = true
       auctionBidData.approve = true
+      auctionBidData.status = AuctionStatus['PAYMENT']
 
       await auctionData.save()
       await auctionBidData.save()
@@ -322,6 +376,45 @@ export default class AuctionsController {
     } catch (error) {
       if (error.status === 404) {
         throw new DataNotFoundException('Bid')
+      } else {
+        console.log(error)
+      }
+    }
+  }
+
+  async paymentAuction({ response, params, auth }: HttpContext) {
+    try {
+      const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
+
+      const auctionData = await Auction.query()
+        .preload('auctionGalleries')
+        .where('id', params.id)
+        .firstOrFail()
+
+      const bidData = await AuctionBet.query()
+        .where('auction_id', auctionData.id)
+        .andWhere('profile_id', profileData.id)
+        .orderBy('nominal', 'desc')
+        .firstOrFail()
+
+      const newTransaction = new Transaction()
+      newTransaction.auctionName = auctionData.auctionName
+      newTransaction.nominal = auctionData.highestBid
+      newTransaction.thumbnail = auctionData.auctionGalleries[0].auctionImage
+      newTransaction.profileId = profileData.id
+      newTransaction.auctionId = auctionData.id
+
+      bidData.status = AuctionStatus['DONE']
+
+      await newTransaction.save()
+      await bidData.save()
+
+      return response.created({
+        message: 'Transaction success!',
+      })
+    } catch (error) {
+      if (error.status === 404) {
+        throw new DataNotFoundException('Auction')
       } else {
         console.log(error)
       }
