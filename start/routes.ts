@@ -83,6 +83,8 @@ router
         router.get('/bid/:id', '#controllers/auctions_controller.approveBid')
         router.post('/bid/:id', '#controllers/auctions_controller.bidAuction')
         router.get('/payment/:id', '#controllers/auctions_controller.paymentAuction')
+        router.get('/buy-now/:id', '#controllers/auctions_controller.buyNowAuction')
+        router.post('/shipping/:id', '#controllers/auctions_controller.shippingAuction')
       })
       .prefix('/auction')
       .use(

@@ -7,6 +7,7 @@ import Profile from './profile.js'
 import AuctionBet from './auction_bet.js'
 import AuctionGallery from './auction_gallery.js'
 import Transaction from './transaction.js'
+import { AuctionStatus } from '../enums/status.js'
 
 export default class Auction extends BaseModel {
   @column({ isPrimary: true })
@@ -35,6 +36,9 @@ export default class Auction extends BaseModel {
 
   @column()
   declare approve: boolean
+
+  @column()
+  declare status: AuctionStatus
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

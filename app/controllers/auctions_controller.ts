@@ -16,6 +16,7 @@ import { currencyFormatter } from '../helpers/formatter.js'
 import AuctionBet from '#models/auction_bet'
 import { AuctionStatus } from '../enums/status.js'
 import Transaction from '#models/transaction'
+import { shippingAuctionValidator } from '#validators/shipping_auction'
 
 export default class AuctionsController {
   async getUserBids({ response, auth }: HttpContext) {
@@ -29,6 +30,12 @@ export default class AuctionsController {
           a.timer,
           a.highest_bid,
           a.approve,
+                    CASE
+            WHEN a.status = "progress" THEN "On Progress"
+            WHEN a.status = "payment" THEN "Waiting for Payment"
+            WHEN a.status = "shipping" THEN "Shipping"
+            WHEN a.status = "done" THEN "Finish"
+          END AS status,
           GROUP_CONCAT(
             ag.auction_image
           ) AS galleries
@@ -70,6 +77,12 @@ export default class AuctionsController {
       a.timer,
       a.highest_bid,
       a.approve,
+                CASE
+            WHEN a.status = "progress" THEN "On Progress"
+            WHEN a.status = "payment" THEN "Waiting for Payment"
+            WHEN a.status = "shipping" THEN "Shipping"
+            WHEN a.status = "done" THEN "Finish"
+          END AS status,
       GROUP_CONCAT(
         ag.auction_image
       ) AS galleries
@@ -84,7 +97,7 @@ export default class AuctionsController {
       paramArr.push(queryParam.community)
     }
 
-    query += ` GROUP BY a.id, a.auction_name`
+    query += ` GROUP BY a.id`
 
     let auctionData = await db.rawQuery(query, paramArr)
 
@@ -111,6 +124,12 @@ export default class AuctionsController {
       a.timer,
       a.highest_bid,
       a.approve,
+          CASE
+            WHEN a.status = "progress" THEN "On Progress"
+            WHEN a.status = "payment" THEN "Waiting for Payment"
+            WHEN a.status = "shipping" THEN "Shipping"
+            WHEN a.status = "done" THEN "Finish"
+          END AS status,
       GROUP_CONCAT(
         ag.auction_image
       ) AS galleries
@@ -121,11 +140,11 @@ export default class AuctionsController {
     const paramArr = [profileData.id.toString()]
 
     if (queryParam.category) {
-      query += ` AND c.category_name LIKE ?`
-      paramArr.push(`%${queryParam.category}%`)
+      query += ` AND a.category_id = ?`
+      paramArr.push(queryParam.category)
     }
 
-    query += ` GROUP BY a.id, a.auction_name`
+    query += ` GROUP BY a.id`
 
     let auctionData = await db.rawQuery(query, paramArr)
 
@@ -151,6 +170,12 @@ export default class AuctionsController {
           a.timer,
           a.highest_bid,
           a.approve,
+          CASE
+            WHEN a.status = "progress" THEN "On Progress"
+            WHEN a.status = "payment" THEN "Waiting for Payment"
+            WHEN a.status = "shipping" THEN "Shipping"
+            WHEN a.status = "done" THEN "Finish"
+          END AS status,
           GROUP_CONCAT(
             ag.auction_image
           ) AS galleries
@@ -226,6 +251,12 @@ export default class AuctionsController {
           a.description,
           a.approve,
           a.profile_id,
+          CASE
+            WHEN a.status = "progress" THEN "On Progress"
+            WHEN a.status = "payment" THEN "Waiting for Payment"
+            WHEN a.status = "shipping" THEN "Shipping"
+            WHEN a.status = "done" THEN "Finish"
+          END AS status,
           GROUP_CONCAT(
             ag.auction_image
           ) AS galleries
@@ -364,6 +395,7 @@ export default class AuctionsController {
 
       auctionData.timer = DateTime.now().minus({ days: 1 })
       auctionData.approve = true
+      auctionData.status = AuctionStatus['PAYMENT']
       auctionBidData.approve = true
       auctionBidData.status = AuctionStatus['PAYMENT']
 
@@ -378,6 +410,35 @@ export default class AuctionsController {
         throw new DataNotFoundException('Bid')
       } else {
         console.log(error)
+      }
+    }
+  }
+
+  async buyNowAuction({ response, params, auth }: HttpContext) {
+    try {
+      const profileData = await Profile.findByOrFail('user_id', auth.user!.id)
+
+      const auctionData = await Auction.findOrFail(params.id)
+
+      const newAuctionBid = new AuctionBet()
+      newAuctionBid.nominal = auctionData.buyNowPrice!
+      newAuctionBid.profileId = profileData.id
+      newAuctionBid.auctionId = auctionData.id
+      newAuctionBid.approve = true
+      newAuctionBid.status = AuctionStatus['PAYMENT']
+
+      auctionData.timer = DateTime.now().minus({ days: 1 })
+      auctionData.approve = true
+
+      await auctionData.save()
+      await newAuctionBid.save()
+
+      return response.ok({
+        message: 'Buy now approved!',
+      })
+    } catch (error) {
+      if (error.status === 404) {
+        throw new DataNotFoundException('Auction')
       }
     }
   }
@@ -404,16 +465,51 @@ export default class AuctionsController {
       newTransaction.profileId = profileData.id
       newTransaction.auctionId = auctionData.id
 
-      bidData.status = AuctionStatus['DONE']
+      bidData.status = AuctionStatus['SHIPPING']
+      auctionData.status = AuctionStatus['SHIPPING']
 
       await newTransaction.save()
       await bidData.save()
+      await auctionData.save()
 
       return response.created({
         message: 'Transaction success!',
       })
     } catch (error) {
       if (error.status === 404) {
+        throw new DataNotFoundException('Auction')
+      } else {
+        console.log(error)
+      }
+    }
+  }
+
+  async shippingAuction({ request, response, params }: HttpContext) {
+    try {
+      const data = await request.validateUsing(shippingAuctionValidator)
+
+      const auctionData = await Auction.findOrFail(params.id)
+      const transactionData = await Transaction.findByOrFail('auction_id', auctionData.id)
+      const bidData = await AuctionBet.query()
+        .where('auction_id', params.id)
+        .andWhere('approve', true)
+        .firstOrFail()
+
+      auctionData.status = AuctionStatus['DONE']
+      transactionData.shippingCode = data.shippingCode
+      bidData.status = AuctionStatus['DONE']
+
+      await auctionData.save()
+      await transactionData.save()
+      await bidData.save()
+
+      return response.ok({
+        message: 'Shippment success!',
+      })
+    } catch (error) {
+      if (error.status === 422) {
+        throw new ValidationException(error.messages)
+      } else if (error.status === 404) {
         throw new DataNotFoundException('Auction')
       } else {
         console.log(error)

@@ -17,6 +17,9 @@ export default class Transaction extends BaseModel {
   @column()
   declare thumbnail: string
 
+  @column()
+  declare shippingCode: string
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
